@@ -1,1 +1,1 @@
-worker: node maxraidbot.py
+worker: python maxraidbot.py

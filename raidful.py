@@ -1,7 +1,7 @@
 # importing the requests library 
-import requests
-import os
-  
+# import requests
+import const
+
 # api-endpoint 
   
 # defining a params dict for the parameters to be sent to the API 
@@ -10,7 +10,7 @@ PARAMS = {}
 # sending get request and saving the response as response object 
 
 def getData():
-    r = requests.get(url = os.environ['SHEET_URL'], params = PARAMS)
+    r = requests.get(url = const.SHEET_URL, params = PARAMS)
     data = r.json()
     return data
 

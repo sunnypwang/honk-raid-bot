@@ -1,6 +1,6 @@
 import discord
 import raidful as rf
-import os
+import const
 
 def getRaidPokemonEmbed(data):
     embed = discord.Embed()
@@ -60,4 +60,4 @@ async def on_message(message):
             else:
                  await message.channel.send(msg)
 
-client.run(os.environ['BOT_TOKEN'])
+client.run(const.BOT_TOKEN)

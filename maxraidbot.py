@@ -29,7 +29,7 @@ async def on_message(message):
         await client.logout()
 
     elif message.content.startswith('!post'):
-        content = message.content.strip().split(" ")
+        content = message.content.strip().split()
         params = content[1:len(content)]
         if (len(params) > 0):
             res = rf.postRaid(params, message.author.name)
@@ -37,6 +37,13 @@ async def on_message(message):
         else:
             await message.channel.send('Please provide Pokemon name (If Gigantamax please include )')
 
+    elif message.content.startswith('!start'):
+        params = message.content.strip().split()[1:]
+        res = rf.startRaid(params)
+        if res:
+            await message.channel.send(embed=util.getRaidPokemonEmbed(res))
+        else:
+            await message.channel.send('ID not found. Please type `!list` for all available raids')
 
     #Temporary Raid Announcement Test, will think of a proper command+format later
     elif message.content.startswith('!announce'):

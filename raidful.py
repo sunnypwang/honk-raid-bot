@@ -36,6 +36,11 @@ def getAllPokemonList():
     data = getData()
     return data['items']
 
+def getRaidbyID(id):
+    r = requests.get(url = const.SHEET_URL + '/' + id)
+    data = r.json()
+    return data
+
 # -------------
 #  POST REQUEST
 # -------------
@@ -47,7 +52,7 @@ def postRaid(params, owner):
         'rarity': 5,
         'gmax': False,
         'owner': owner,
-        'enabled': False
+        'opened': False
     }
     if 'G' in params:
         raid_data['gmax'] = True
@@ -61,3 +66,17 @@ def postRaid(params, owner):
         return formatPokemon(raid_data)
     else:
         return r.status_code + ' Cannot post the raid'
+
+def startRaid(params):
+    id = params[0]
+    code = params[1] if len(params) > 1 else ''
+    data = getRaidbyID(id)
+
+    if 'error' in data.keys():
+        return None
+
+    data['opened'] = True
+    data['code'] = code
+    put_url = f'{const.SHEET_URL}/{id}&method=PUT'
+    r = requests.post(url = put_url, json = data)
+    return data

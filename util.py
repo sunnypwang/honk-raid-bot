@@ -3,6 +3,20 @@ import discord
 RAID_STAR = ""
 RAID_POKEMON = ""
 RAID_OWNER = ""
+OWNER_ID = {
+    'Sunny' : 'SN',
+    'Kirbio' : 'KB',
+    'boomngong' : 'BN',
+    'BITAH' : 'BT'
+}
+
+def generateID(owner, total_posts):
+    if owner in OWNER_ID:
+        user_id = OWNER_ID[owner]
+    else:
+        user_id = 'XX'
+    post_id = total_posts
+    return f'{user_id}{post_id:02d}'
 
 def setCurrentRaidInfo(star,pokemon,owner):
     global RAID_STAR

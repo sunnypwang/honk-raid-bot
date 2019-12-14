@@ -1,4 +1,5 @@
 import discord
+import requests
 import raidful as rf
 import const
 import util
@@ -27,12 +28,22 @@ async def on_message(message):
     if message.content.startswith('!stop'):
         await client.logout()
 
+    elif message.content.startswith('!post'):
+        content = message.content.strip().split(" ")
+        params = content[1:len(content)]
+        if (len(params) > 0):
+            res = rf.postRaid(params, message.author.name)
+            await message.channel.send(res)
+        else:
+            await message.channel.send('Please provide Pokemon name (If Gigantamax please include )')
+
+
     #Temporary Raid Announcement Test, will think of a proper command+format later
-    if message.content.startswith('!announce'):
+    elif message.content.startswith('!announce'):
         await message.channel.send('**Raid Announcement**\nEPIC')
 
     #Get latest raid result
-    if message.content.startswith('!result'):
+    elif message.content.startswith('!result'):
         if announcementMsg=="":
             await message.channel.send("Please start the raid first.")
             return
@@ -49,7 +60,7 @@ async def on_message(message):
                 pass
             users = await r.users().flatten()
             for u in users:
-                if u!= client.user:
+                if not u == client.user:
                     if r.emoji == "\U0001F171":
                         brokelist.append(u.name);
                     else:
@@ -63,7 +74,7 @@ async def on_message(message):
         msg = util.formatResultMessage(caughtlist,brokelist)
         await message.channel.send(msg)
 
-    if message.content.startswith('!getraidlist'):
+    elif message.content.startswith('!list'):
         content = message.content.strip().split(" ")
         parameters = content[1:len(content)]
         if len(parameters)==0:
@@ -85,5 +96,8 @@ async def on_message(message):
                  await message.channel.send('There is no Pokemon on the list.')
             else:
                  await message.channel.send(msg)
+
+
+
 
 client.run(const.BOT_TOKEN)

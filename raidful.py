@@ -1,6 +1,7 @@
 # importing the requests library 
 import requests
 import const
+import util
   
 # api-endpoint 
   
@@ -15,7 +16,7 @@ def getData():
     return data
 
 # extracting data in json format 
-data = getData()
+# data = getData()
 
 def formatPokemon(data):
     isgmax = ""
@@ -35,4 +36,28 @@ def getAllPokemonList():
     data = getData()
     return data['items']
 
+# -------------
+#  POST REQUEST
+# -------------
 
+def postRaid(params, owner):
+    raid_data = {
+        '#': util.generateID(owner, len(getUserPokemonList(owner))),
+        'name': params[0],
+        'rarity': 5,
+        'gmax': False,
+        'owner': owner,
+        'enabled': False
+    }
+    if 'G' in params:
+        raid_data['gmax'] = True
+
+    rarity = [num for num in [1,2,3,4] if str(num) in params] # [1] if params has '1'
+    if rarity:
+        raid_data['rarity'] = rarity[0]
+
+    r = requests.post(url = const.SHEET_URL, json = raid_data)
+    if r.status_code == requests.codes.ok:
+        return formatPokemon(raid_data)
+    else:
+        return r.status_code + ' Cannot post the raid'

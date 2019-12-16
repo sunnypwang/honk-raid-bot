@@ -1,4 +1,5 @@
 import discord
+import deximage
 
 RAID_STAR = ""
 RAID_POKEMON = ""
@@ -58,7 +59,10 @@ def getRaidPokemonEmbed(data):
     
     embed.title = isgmax+data['name']
     embed.description = star
-    embed.set_thumbnail(url="https://www.serebii.net/swordshield/pokemon/132.png")
+
+    natdexnum = deximage.getSerebiiDirect(data['name'])
+    
+    embed.set_thumbnail(url="https://www.serebii.net/swordshield/pokemon/"+natdexnum+".png")
     embed.thumbnail.width = 64
     embed.thumbnail.height = 64
     embed.set_author(name=data['owner'])

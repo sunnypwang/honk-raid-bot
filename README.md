@@ -1,11 +1,14 @@
 # honk-raid-bot
 
 Discord bot for Pokemon Sword & Shield Raid Announcement
+V 1.1
 
 Features:
 - `list` for listing all available raids
-- `post <NAME> [RARITY] [isGMAX]` for posting new raid (if rarity is not specified it defaults to 5, owner could be extracted from message object)
-- `start <ID> [CODE]` for announcing a room to start the raid
-- `clear <ID>` for clearing all raids from that owner with given name . If <ID> is all then clear all raids from that owner
+- `post <NAME> [RARITY] [isGMAX]` for posting new raid. Rarity default is 5.
+- `open <ID> [PASSCODE]` for opening a room to start the raid
+- `close` for closing currently active raid
+- `clear [ID]` for clearing a raid with ID given, or clear all raids by that sender.
 - `flush` for clearing every single raid
-- `toggle <ID>` for enabling/disabling specific raid (assuming no duplicate mons)
+- `result` for showing catching result based on reactions given to raid announcement embeded message
+- `logout` for switching off this awesome bot

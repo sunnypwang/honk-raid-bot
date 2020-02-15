@@ -1,82 +1,173 @@
-# importing the requests library 
+# importing the requests library
 import requests
 import const
 import util
-  
-# api-endpoint 
-  
-# defining a params dict for the parameters to be sent to the API 
-PARAMS = {} 
-  
-# sending get request and saving the response as response object 
+# api-endpoint
+
+# defining a params dict for the parameters to be sent to the API
+PARAMS = {}
+
+# sending get request and saving the response as response object
+
 
 def getData():
-    r = requests.get(url = const.SHEET_URL, params = PARAMS)
+    r = requests.get(url=const.SHEET_URL, params=PARAMS)
     data = r.json()
     return data
 
-# extracting data in json format 
-# data = getData()
 
-def formatPokemon(data):
-    isgmax = ""
-    if(data['gmax']):
-        isgmax = "G-"
-    return str(data['rarity'])+" Star  "+isgmax+data['name']
-
-def getUserPokemonList(owner):
-    data = getData()
-    result = []
-    for i in data['items']:
-        if i['owner']==owner:
-            result.append(i)
-    return result
-
-def getAllPokemonList():
+def getAllRaid():
     data = getData()
     return data['items']
 
+
+def getAllRaidbyOwner(owner):
+    raids = getAllRaid()
+    result = []
+    for raid in raids:
+        if raid['owner'] == owner:
+            result.append(raid)
+    return result
+
+
 def getRaidbyID(id):
-    r = requests.get(url = const.SHEET_URL + '/' + id)
+    r = requests.get(url=const.SHEET_URL + '/' + id.upper())
+    print(r.url)
     data = r.json()
     return data
+
+
+def getAllActiveRaid():
+    active_raid = []
+    raids = getAllRaid()
+    for raid in raids:
+        if raid['opened']:
+            active_raid.append(raid)
+    return active_raid
+
+
+def listRaid(params):
+    # list all raid
+    if len(params) == 0:
+        raids = getAllRaid()
+
+    # list all raid for specified owner
+    else:
+        owner = params[0]
+        raids = getAllRaidbyOwner(owner)
+    print(raids)
+    return util.embedRaidList(raids) if len(raids) > 0 else None
 
 # -------------
 #  POST REQUEST
 # -------------
 
+
 def postRaid(params, owner):
-    raid_data = {
-        '#': util.generateID(owner, len(getUserPokemonList(owner))),
-        'name': params[0],
-        'rarity': 5,
-        'gmax': False,
+
+    if len(params) == 0:
+        return 'Please provide Pokemon name (If Gigantamax please include G or GMax)'
+
+    pokemon = params[0]
+    rarity = 5
+    gmax = False
+    for param in params:
+        if param.isdigit() and int(param) in [1, 2, 3, 4, 5]:
+            rarity = int(param)
+        if param in ['g', 'gmax', 'g-max']:
+            gmax = True
+
+    raid = {
+        '#': util.generateID(owner, len(getAllRaidbyOwner(owner))),
+        'pokemon': pokemon,
+        'rarity': rarity,
+        'gmax': gmax,
         'owner': owner,
-        'opened': False
+        'opened': False,
+        'code': '-'
     }
-    if 'G' in params:
-        raid_data['gmax'] = True
 
-    rarity = [num for num in [1,2,3,4] if str(num) in params] # [1] if params has '1'
-    if rarity:
-        raid_data['rarity'] = rarity[0]
-
-    r = requests.post(url = const.SHEET_URL, json = raid_data)
+    r = requests.post(url=const.SHEET_URL, json=raid)
     if r.status_code == requests.codes.ok:
-        return formatPokemon(raid_data)
+        return {'status': 'ok', 'msg': util.formatPokemon(raid)}
     else:
-        return r.status_code + ' Cannot post the raid'
+        return {'status': 'error', 'msg': 'Cannot post the raid'}
 
-def startRaid(params):
-    id = params[0]
-    code = params[1] if len(params) > 1 else ''
-    data = getRaidbyID(id)
 
-    if 'error' in data.keys():
-        return None
+def openRaid(params, raid_start):
 
-    data['opened'] = True
-    data['code'] = code
+    if len(params) < 1:
+        return {'status': 'error', 'msg': 'Please provide raid ID (and optionally 4-digit passcode)'}
+
+    if raid_start:
+        return {'status': 'error', 'msg': 'Another Raid is active!'}
+
+    id = params[0].upper()
+    code = '-'
+
+    if len(params) > 1:
+        code = params[1]
+        if not code.isdigit() or len(code) != 4:
+            return {'status': 'error', 'msg': 'Passcode must be 4-digit'}
+
+    raid = getRaidbyID(id)
+
+    if 'error' in raid.keys():
+        return {'status': 'error', 'msg': 'ID not found. Please type `!list` for all available raids'}
+
+    raid['opened'] = True
+    raid['code'] = code
     put_url = f'{const.SHEET_URL}/{id}&method=PUT'
-    r = requests.post(url = put_url, json = data)
-    return data
+    r = requests.post(url=put_url, json=raid)
+
+    return {'status': 'ok', 'embed': util.embedRaid(raid)}
+
+
+def closeRaid():
+
+    # In reality there should be only one active raid at a time
+    raids = getAllActiveRaid()
+    if not raids:
+        return 'No active raid!'
+
+    for raid in raids:
+        raid['opened'] = False
+        id = raid['#']
+        put_url = f'{const.SHEET_URL}/{id}&method=PUT'
+        r = requests.post(url=put_url, json=raid)
+
+    return 'Raid closed!'
+
+
+# -------------
+#  DELETE REQUEST
+# -------------
+
+
+def deleteRaidbyID(id):
+    put_url = f'{const.SHEET_URL}/{id}&method=DELETE'
+    r = requests.post(url=put_url)
+
+
+def deleteRaid(params, owner):
+    if len(params) > 0:
+        id = params[0]
+        raid = getRaidbyID(id)
+        if not raid:
+            return 'ID not found!'
+        if raid['owner'] == owner:
+            deleteRaidbyID(id)
+        return util.formatPokemon(raid) + ' deleted!'
+    else:
+        raids = getAllRaidbyOwner(owner)
+        for raid in raids:
+            deleteRaidbyID(raid['#'])
+        return 'All of your raids deleted!'
+
+
+def deleteAllRaid():
+    raids = getAllRaid()
+    for raid in raids:
+        id = raid['#']
+        deleteRaidbyID(id)
+    return 'All raids deleted!'

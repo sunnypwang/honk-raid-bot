@@ -57,9 +57,9 @@ async def on_message(message):
         res = raidful.postRaid(params, message.author.name)
         await message.channel.send(res['msg'])
 
-    elif message.content.startswith('!open'):
+    elif message.content.startswith('!open') or message.content.startswith('!start'):
         await message.channel.send('Starting raid...', delete_after=DELAY)
-        res = raidful.openRaid(params, raid_start)
+        res = raidful.openRaid(params, raid_start, message.author.name)
         if res['status'] == 'ok':
             raid_start = True
             await message.channel.send('**RAID ANNOUNCEMENT**')
@@ -82,18 +82,25 @@ async def on_message(message):
     elif message.content.startswith('!clear'):
         await message.channel.send('Deleting... Please kindly sit tight', delete_after=DELAY*2)
         res = raidful.deleteRaid(params, message.author.name)
+        raid_start = False
         await message.channel.send(res)
 
     elif message.content.startswith('!flush'):
         await message.channel.send('Deleting... Please kindly sit tight for a while', delete_after=DELAY*3)
         res = raidful.deleteAllRaid()
+        raid_start = False
         await message.channel.send(res)
 
     # Get latest raid result
     elif message.content.startswith('!result'):
-        if raid_message_id == None:
+        if not raid_start:
             await message.channel.send("Please start the raid first.")
             return
+
+        # close automatically
+        await message.channel.send('Ending raid...', delete_after=DELAY)
+        res = raidful.closeRaid()
+        raid_start = False
 
         await message.channel.send('Obtaining result...', delete_after=DELAY)
         # Check for valid emotes

@@ -89,12 +89,27 @@ def postRaid(params, owner):
 
     r = requests.post(url=const.SHEET_URL, json=raid)
     if r.status_code == requests.codes.ok:
-        return {'status': 'ok', 'msg': util.formatPokemon(raid)}
+        return {'status': 'ok', 'msg': util.formatPokemon(raid) + '\nID: ' + raid['#']}
     else:
         return {'status': 'error', 'msg': 'Cannot post the raid'}
 
 
-def openRaid(params, raid_start):
+def openRaid(params, raid_start, owner):
+
+    # raids = getAllRaidbyOwner(owner)
+    # id = None
+    # # if ID not specified but there are many raids
+    # if len(params) < 1 and len(raids) > 1:
+    #     return {'status': 'error', 'msg': 'Please provide raid ID (and optionally 4-digit passcode)'}
+    # # if ID not specified but there is only single raid
+    # elif len(params) < 1 and len(raids) == 1:
+    #     id = raids[0]['#']
+    # # if ID specified
+    # elif len(params) > 1:
+
+    # else:
+
+    # OLD CODE BELOW
 
     if len(params) < 1:
         return {'status': 'error', 'msg': 'Please provide raid ID (and optionally 4-digit passcode)'}
@@ -157,7 +172,10 @@ def deleteRaid(params, owner):
             return 'ID not found!'
         if raid['owner'] == owner:
             deleteRaidbyID(id)
-        return util.formatPokemon(raid) + ' deleted!'
+            return util.formatPokemon(raid) + ' deleted!'
+        else:
+            return 'This raid belongs to another trainer!'
+        return 'Cannot delete raid! Please try again'
     else:
         raids = getAllRaidbyOwner(owner)
         for raid in raids:

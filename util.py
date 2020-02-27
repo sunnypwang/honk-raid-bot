@@ -59,6 +59,7 @@ def embedRaid(raid):
     star = ':star:' * int(raid['rarity'])
     embed.color = 0xA41CFF if raid['gmax'] else 0xF90195
     embed.title = gmax_prefix + raid['pokemon'].capitalize()
+    embed.description = star
     # if raid['code'] != '':
     #     embed.description = '{}\n\n`{:4d}`'.format(star, int(raid['#']))
     # else:

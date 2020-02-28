@@ -136,8 +136,8 @@ def openRaid(params, raid_start, owner):
     # if the id is not specified
     if len(params) <= 1:
         if len(raids) > 1:
-            #check if param 1 is passcode or not
-            if params[0].isdigit():
+            #if no parameter are provided or the first one is passcode
+            if len(params)==0 or params[0].isdigit():
                 return {'status': 'error', 'msg': 'Please provide raid ID (and optionally 4-digit passcode)'}
             else:
                 raid_id = params[0].upper()
@@ -163,14 +163,20 @@ def openRaid(params, raid_start, owner):
                 if not code.isdigit() or len(code) != 4:
                     return {'status': 'error', 'msg': 'Passcode must be 4-digit'}
             else:
-                #If the code is in correct format, set the code otherwise keep it as not set
-                if code.isdigit() and len(code) == 4:
-                    code = params[0]
+                code = params[0]
+                #Check if the code is in correct format.revert to none if it's not
+                if not code.isdigit() or len(code) != 4:
+                    code = '-'
+                    raid_id = params[0]
 
     raid = getRaidbyID(raid_id)
 
     if 'error' in raid.keys():
         return {'status': 'error', 'msg': 'ID not found. Please type `!list` for all available raids'}
+
+    if raid['owner']!=owner:
+        return {'status': 'error', 'msg': 'This raid belongs to another trainer!'}
+
 
     raid['opened'] = True
     raid['code'] = code

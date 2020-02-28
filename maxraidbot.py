@@ -87,7 +87,7 @@ async def on_message(message):
         else:
             await message.channel.send(res['msg'])
         
-    elif message.content.startswith('!reopen') or message.content.startswith('!uno') or message.content.startswith('!again'):
+    elif message.content.startswith('!reopen') or message.content.startswith('!uno') or message.content.startswith('!again') or message.content.startswith('!um') or message.content.startswith('!unomas'):
         if LAST_RAID['owner']=='-':
             await message.channel.send('There was no latest raid.')
             return
@@ -113,13 +113,13 @@ async def on_message(message):
             await message.channel.send(res['msg'])
 
     
-    elif message.content.startswith('!close'):
-        await message.channel.send('Ending raid...', delete_after=DELAY)
-        res = raidful.closeRaid()
-        raid_start = False
-        await message.channel.send(res, delete_after=DELAY)
-        #Return status to normal
-        await util.setRaidStatusMessage(client,"")
+    #elif message.content.startswith('!close'):
+    #    await message.channel.send('Ending raid...', delete_after=DELAY)
+    #    res = raidful.closeRaid()
+    #    raid_start = False
+    #    await message.channel.send(res, delete_after=DELAY)
+    #    #Return status to normal
+    #    await util.setRaidStatusMessage(client,"")
     
     elif message.content.startswith('!clear'):
         await message.channel.send('Deleting... Please kindly sit tight', delete_after=DELAY*2)
@@ -137,7 +137,7 @@ async def on_message(message):
             await message.channel.send('This command can only be invoked by administrator.\nPlease call Kirbio or Sunny for help.')
 
     # Get latest raid result
-    elif message.content.startswith('!result'):
+    elif message.content.startswith('!result') or message.content.startswith('!close') or message.content.startswith('!end'):
         if not raid_start:
             await message.channel.send("Please start the raid first.")
             return

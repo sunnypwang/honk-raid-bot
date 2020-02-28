@@ -14,6 +14,9 @@ raid_start = False
 client = discord.Client()
 DELAY = 3
 
+#Keep track of the latest opened raid
+LAST_RAID = {'param':[],'owner':"-"}
+
 
 @client.event
 async def on_ready():
@@ -58,12 +61,12 @@ async def on_message(message):
 
     elif message.content.startswith('!post'):
         await message.channel.send('Posting new raid...', delete_after=DELAY)
-        res = raidful.postRaid(params, message.author.name)
+        res = raidful.postRaid(params, message.author.name.lower())
         await message.channel.send(res['msg'])
 
     elif message.content.startswith('!open') or message.content.startswith('!start'):
         await message.channel.send('Starting raid...', delete_after=DELAY)
-        res = raidful.openRaid(params, raid_start, message.author.name)
+        res = raidful.openRaid(params, raid_start, message.author.name.lower())
         if res['status'] == 'ok':
             raid_start = True
             await message.channel.send('**RAID ANNOUNCEMENT**')
@@ -74,11 +77,42 @@ async def on_message(message):
             await msg.add_reaction(emoji="\U0001F1E8")  # Regional Indicator C
             raid_message_id = msg.id
 
+            #Set active raid as the latest raid
+            LAST_RAID['params'] = params
+            LAST_RAID['owner']= message.author.name.lower()
+            
+            #Change status to active raid
+            await util.setRaidStatusMessage(client,util.formatPokemon(res['raid']))
+
         else:
             await message.channel.send(res['msg'])
-        #Change status to active raid
-        await util.setRaidStatusMessage(client,util.formatPokemon(res['raid']))
+        
+    elif message.content.startswith('!reopen') or message.content.startswith('!uno') or message.content.startswith('!again'):
+        if LAST_RAID['owner']=='-':
+            await message.channel.send('There was no latest raid.')
+            return
 
+        await message.channel.send('Starting raid...', delete_after=DELAY)
+        res = raidful.openRaid(LAST_RAID['params'],
+                               raid_start,
+                               LAST_RAID['owner'])
+        if res['status'] == 'ok':
+            raid_start = True
+            await message.channel.send('**RAID ANNOUNCEMENT**')
+            msg = await message.channel.send(embed=res['embed'])
+
+            # await util.addRaidResultReact(msg)
+            await msg.add_reaction(emoji="\U0001F171")  # Emoji B
+            await msg.add_reaction(emoji="\U0001F1E8")  # Regional Indicator C
+            raid_message_id = msg.id
+
+             #Change status to active raid
+            await util.setRaidStatusMessage(client,util.formatPokemon(res['raid']))
+
+        else:
+            await message.channel.send(res['msg'])
+
+    
     elif message.content.startswith('!close'):
         await message.channel.send('Ending raid...', delete_after=DELAY)
         res = raidful.closeRaid()

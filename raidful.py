@@ -22,11 +22,24 @@ def getAllRaid():
 
 
 def getAllRaidbyOwner(owner):
+    #new code using mongoquery
+    #not working for now
+    #prevent URL injection maybe?
+    #if '"' in owner:
+    #    return []
+    
+    #r = requests.get(url=const.SHEET_URL, params={"owner",owner})
+    #print(r.url)
+    #data = r.json()
+
+    #print(data)
+    
     raids = getAllRaid()
     result = []
     for raid in raids:
         if raid['owner'] == owner:
             result.append(raid)
+    
     return result
 
 
@@ -123,7 +136,11 @@ def openRaid(params, raid_start, owner):
     # if the id is not specified
     if len(params) <= 1:
         if len(raids) > 1:
-            return {'status': 'error', 'msg': 'Please provide raid ID (and optionally 4-digit passcode)'}
+            #check if param 1 is passcode or not
+            if params[0].isdigit():
+                return {'status': 'error', 'msg': 'Please provide raid ID (and optionally 4-digit passcode)'}
+            else:
+                raid_id = params[0].upper()
         elif len(raids) == 1:
             raid_id = raids[0]['#'].upper()
             specified_id = False
@@ -136,12 +153,19 @@ def openRaid(params, raid_start, owner):
     code = '-'
 
     if len(params) > 1 or not specified_id:
-        if specified_id:
-            code = params[1]
-        else:
-            code = params[0]
-        if not code.isdigit() or len(code) != 4:
-            return {'status': 'error', 'msg': 'Passcode must be 4-digit'}
+        #check if any params has been provided or not
+        if len(params) !=0:
+            #if provided parmeter, check if it's correct or not
+            if specified_id:
+                code = params[1]
+
+                #Check if the code is in correct format
+                if not code.isdigit() or len(code) != 4:
+                    return {'status': 'error', 'msg': 'Passcode must be 4-digit'}
+            else:
+                #If the code is in correct format, set the code otherwise keep it as not set
+                if code.isdigit() and len(code) == 4:
+                    code = params[0]
 
     raid = getRaidbyID(raid_id)
 
@@ -178,11 +202,13 @@ def closeRaid():
 
 
 def deleteRaidbyID(id):
+    id = id.upper()
     put_url = f'{const.SHEET_URL}/{id}&method=DELETE'
     r = requests.post(url=put_url)
 
 
 def deleteRaid(params, owner):
+    owner = owner.lower()
     if len(params) > 0:
         id = params[0]
         raid = getRaidbyID(id)

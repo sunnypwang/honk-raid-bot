@@ -5,10 +5,10 @@ RAID_STAR = ""
 RAID_POKEMON = ""
 RAID_OWNER = ""
 OWNER_ID = {
-    'Sunny': 'SN',
-    'Kirbio': 'KB',
+    'sunny': 'SN',
+    'kirbio': 'KB',
     'boomngong': 'BN',
-    'BITAH': 'BT'
+    'bitah': 'BT'
 }
 
 

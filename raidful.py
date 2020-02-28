@@ -32,7 +32,7 @@ def getAllRaidbyOwner(owner):
 
 def getRaidbyID(id):
     r = requests.get(url=const.SHEET_URL + '/' + id.upper())
-    print(r.url)
+    #print(r.url)
     data = r.json()
     return data
 
@@ -111,21 +111,39 @@ def openRaid(params, raid_start, owner):
 
     # OLD CODE BELOW
 
-    if len(params) < 1:
-        return {'status': 'error', 'msg': 'Please provide raid ID (and optionally 4-digit passcode)'}
+    raids = getAllRaidbyOwner(owner) #get the raid list from the owner
+    raid_id = None
 
+    specified_id = True #to keep track if the raid ID is specified or not
+
+    # if the raid is already started
     if raid_start:
         return {'status': 'error', 'msg': 'Another Raid is active!'}
 
-    id = params[0].upper()
+    # if the id is not specified
+    if len(params) <= 1:
+        if len(raids) > 1:
+            return {'status': 'error', 'msg': 'Please provide raid ID (and optionally 4-digit passcode)'}
+        elif len(raids) == 1:
+            raid_id = raids[0]['#'].upper()
+            specified_id = False
+        else:
+            return {'status': 'error', 'msg': 'You currently have no raid. Please add one first!'}
+    else:
+        raid_id = params[0].upper()
+
+    
     code = '-'
 
-    if len(params) > 1:
-        code = params[1]
+    if len(params) > 1 or not specified_id:
+        if specified_id:
+            code = params[1]
+        else:
+            code = params[0]
         if not code.isdigit() or len(code) != 4:
             return {'status': 'error', 'msg': 'Passcode must be 4-digit'}
 
-    raid = getRaidbyID(id)
+    raid = getRaidbyID(raid_id)
 
     if 'error' in raid.keys():
         return {'status': 'error', 'msg': 'ID not found. Please type `!list` for all available raids'}
@@ -135,7 +153,7 @@ def openRaid(params, raid_start, owner):
     put_url = f'{const.SHEET_URL}/{id}&method=PUT'
     r = requests.post(url=put_url, json=raid)
 
-    return {'status': 'ok', 'embed': util.embedRaid(raid)}
+    return {'status': 'ok', 'embed': util.embedRaid(raid),'raid':raid}
 
 
 def closeRaid():

@@ -33,7 +33,7 @@ async def on_message(message):
         # else:
         #     return
 
-    print(message.content)
+    #print(message.content)
     params = parse_parameters(message.content)
     # user message
     if message.content.startswith('!logout'):
@@ -42,6 +42,10 @@ async def on_message(message):
             # print(deleteAllRaid)
 
         await client.logout()
+
+    #Simple test command to check if the bot is not dead
+    elif message.content.startswith('!ping'):
+        await message.channel.send('pong')
 
     elif message.content.startswith('!list'):
         # await message.channel.send('Here is all available raids')
@@ -72,13 +76,17 @@ async def on_message(message):
 
         else:
             await message.channel.send(res['msg'])
+        #Change status to active raid
+        await util.setRaidStatusMessage(client,util.formatPokemon(res['raid']))
 
     elif message.content.startswith('!close'):
         await message.channel.send('Ending raid...', delete_after=DELAY)
         res = raidful.closeRaid()
         raid_start = False
         await message.channel.send(res, delete_after=DELAY)
-
+        #Return status to normal
+        await util.setRaidStatusMessage(client,"")
+    
     elif message.content.startswith('!clear'):
         await message.channel.send('Deleting... Please kindly sit tight', delete_after=DELAY*2)
         res = raidful.deleteRaid(params, message.author.name)
@@ -86,10 +94,13 @@ async def on_message(message):
         await message.channel.send(res)
 
     elif message.content.startswith('!flush'):
-        await message.channel.send('Deleting... Please kindly sit tight for a while', delete_after=DELAY*3)
-        res = raidful.deleteAllRaid()
-        raid_start = False
-        await message.channel.send(res)
+        if util.isAdminMessage(message):
+            await message.channel.send('Deleting... Please kindly sit tight for a while', delete_after=DELAY*3)
+            res = raidful.deleteAllRaid()
+            raid_start = False
+            await message.channel.send(res)
+        else:
+            await message.channel.send('This command can only be invoked by administrator.\nPlease call Kirbio or Sunny for help.')
 
     # Get latest raid result
     elif message.content.startswith('!result'):
@@ -130,5 +141,15 @@ async def on_message(message):
 
         msg = util.formatResultMessage(caughtlist, brokelist)
         await message.channel.send(msg)
+
+        #Return status to normal
+        await util.setRaidStatusMessage(client,"")
+
+    #test setting status message
+    elif message.content.startswith('!test'):
+        if util.isAdminMessage(message):
+            print('This admin message')
+        else:
+            print('This not admin message')
 
 client.run(const.BOT_TOKEN)

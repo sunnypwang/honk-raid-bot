@@ -80,3 +80,21 @@ def embedRaidList(raids):
     for raid in raids:
         embeds.append(embedRaid(raid))
     return embeds
+
+async def setRaidStatusMessage(client,raidname):
+    if raidname == "":
+        await client.change_presence(status=None,activity=None)
+        return
+
+    #Until discord supports assets for Game type or enable fully custom status
+    #This will offer more raids detail
+    #raid_info = {"small_image":deximage.getThumbnailURL('toxtricity'),
+    #             "small_text":raidname}
+
+    #apparently the api does not support custom status yet :c    
+    game = discord.Game(name=raidname)
+    await client.change_presence(status=discord.Status.dnd, activity=game)
+    
+def isAdminMessage(message):
+    poster = message.author.name
+    return poster=='Kirbio' or poster=='Sunny'

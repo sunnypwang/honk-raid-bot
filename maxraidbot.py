@@ -132,14 +132,22 @@ async def on_message(message):
     elif message.content.startswith('!clear'):
         await message.channel.send('Deleting... Please kindly sit tight', delete_after=DELAY)
         res = raidful.deleteRaid(params, message.author.name)
-        raid_start = False
+        if raid_start:
+            raid_start = False
+            # Return status to normal
+            await util.setRaidStatusMessage(client, "")
+            
         await message.channel.send(res)
 
     elif message.content.startswith('!flush'):
         if util.isAdminMessage(message):
             await message.channel.send('Deleting... Please kindly sit tight for a while', delete_after=DELAY)
             res = raidful.deleteAllRaid()
-            raid_start = False
+            if raid_start:
+                raid_start = False
+                # Return status to normal
+                await util.setRaidStatusMessage(client, "")
+            
             await message.channel.send(res)
         else:
             await message.channel.send('This command can only be invoked by administrator.\nPlease call @Kirbio or @Sunny for help.')

@@ -17,6 +17,7 @@ OWNER_ID = {
 
 
 def generateID(owner, total_posts):
+    owner = owner.lower()
     if owner in OWNER_ID:
         user_id = OWNER_ID[owner]
     else:
@@ -71,7 +72,7 @@ def embedRaid(raid):
     embed.add_field(name='ID', value='{}'.format(raid['#']))
     embed.add_field(name='passcode', value='{}'.format(raid['code']))
     embed.set_thumbnail(
-        url=getThumbnailURL(raid['pokemon']))
+        url=getThumbnailURL(raid['pokemon'], raid['gmax']))
     # url='img/ditto.png')
     embed.thumbnail.width = 64
     embed.thumbnail.height = 64
@@ -129,16 +130,19 @@ def getClosestMatch(name):
 #         return dexlist[key]
 
 
-def getThumbnailURL(name):
+def getThumbnailURL(name, gmax=False):
     name = name.lower()
 
     if not name in dexlist:
         name = 'ditto'
 
     # special case
-    if name == 'toxtricity':
-        name = 'toxtricity-amped'
-    elif name == 'meowstic':
-        name = 'meowstic-male'
+    # if name == 'toxtricity':
+    #     name = 'toxtricity-amped'
+    # elif name == 'meowstic':
+    #     name = 'meowstic-male'
 
-    return 'https://img.pokemondb.net/sprites/sword-shield/normal-2x/{}.png'.format(name)
+    if gmax:
+        name += '-gmax'
+
+    return 'https://play.pokemonshowdown.com/sprites/gen5/{}.png'.format(name)

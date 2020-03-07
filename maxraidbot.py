@@ -1,21 +1,40 @@
 import discord
-import requests
 import raidful
 import const
 import util
+import asyncio
+
+client = discord.Client()
+
+raid_message_id = None
+raid_start = False
+DELAY = 3
+
+# Keep track of the latest opened raid
+LAST_RAID = {'param': [], 'owner': "-"}
 
 
 def parse_parameters(content):
     return content.strip().lower().split()[1:]
 
 
-raid_message_id = None
-raid_start = False
-client = discord.Client()
-DELAY = 3
+async def sync_db():
+    await client.wait_until_ready()
+    while True:
+        await asyncio.sleep(600)  # task runs every x seconds
+        print('Background sync in progress...')
+        raidful.updateRemote()
 
-#Keep track of the latest opened raid
-LAST_RAID = {'param':[],'owner':"-"}
+
+@client.event
+async def on_connect():
+    raidful.updateLocal()
+    client.loop.create_task(sync_db())
+
+
+@client.event
+async def on_disconnect():
+    print('Disconnected')
 
 
 @client.event
@@ -36,23 +55,12 @@ async def on_message(message):
         # else:
         #     return
 
-    #print(message.content)
+    # print(message.content)
     params = parse_parameters(message.content)
-    # user message
-    if message.content.startswith('!logout'):
-        if not message.content.startswith('!logout force'):
-            print(raidful.closeRaid())
-            # print(deleteAllRaid)
 
-        await client.logout()
-
-    #Simple test command to check if the bot is not dead
-    elif message.content.startswith('!ping'):
-        await message.channel.send('pong')
-
-    elif message.content.startswith('!list'):
+    if message.content.startswith('!list'):
         # await message.channel.send('Here is all available raids')
-        emb_raids = raidful.listRaid(params)
+        emb_raids = raidful.listRaids(params)
         if emb_raids:
             for emb_raid in emb_raids:
                 await message.channel.send(embed=emb_raid)
@@ -61,12 +69,12 @@ async def on_message(message):
 
     elif message.content.startswith('!post'):
         await message.channel.send('Posting new raid...', delete_after=DELAY)
-        res = raidful.postRaid(params, message.author.name.lower())
-        await message.channel.send(res['msg'])
+        res = raidful.postRaid(params, message.author.name)
+        await message.channel.send(res)
 
     elif message.content.startswith('!open') or message.content.startswith('!start'):
         await message.channel.send('Starting raid...', delete_after=DELAY)
-        res = raidful.openRaid(params, raid_start, message.author.name.lower())
+        res = raidful.openRaid(params, raid_start, message.author.name)
         if res['status'] == 'ok':
             raid_start = True
             await message.channel.send('**RAID ANNOUNCEMENT**')
@@ -77,22 +85,23 @@ async def on_message(message):
             await msg.add_reaction(emoji="\U0001F1E8")  # Regional Indicator C
             raid_message_id = msg.id
 
-            #Set active raid as the latest raid
+            # Set active raid as the latest raid
             LAST_RAID['params'] = params
-            LAST_RAID['owner']= message.author.name.lower()
-            
-            #Change status to active raid
-            await util.setRaidStatusMessage(client,util.formatPokemon(res['raid']))
+            LAST_RAID['owner'] = message.author.name.lower()
+
+            # Change status to active raid
+            await util.setRaidStatusMessage(client, util.formatPokemon(res['raid']))
 
         else:
             await message.channel.send(res['msg'])
-        
+
     elif message.content.startswith('!reopen') or message.content.startswith('!uno') or message.content.startswith('!again') or message.content.startswith('!um') or message.content.startswith('!unomas'):
-        if LAST_RAID['owner']=='-':
+        if LAST_RAID['owner'] == '-':
             await message.channel.send('There was no latest raid.')
             return
 
         await message.channel.send('Starting raid...', delete_after=DELAY)
+        raid_start = False      #
         res = raidful.openRaid(LAST_RAID['params'],
                                raid_start,
                                LAST_RAID['owner'])
@@ -106,35 +115,34 @@ async def on_message(message):
             await msg.add_reaction(emoji="\U0001F1E8")  # Regional Indicator C
             raid_message_id = msg.id
 
-             #Change status to active raid
-            await util.setRaidStatusMessage(client,util.formatPokemon(res['raid']))
+            # Change status to active raid
+            await util.setRaidStatusMessage(client, util.formatPokemon(res['raid']))
 
         else:
             await message.channel.send(res['msg'])
 
-    
-    #elif message.content.startswith('!close'):
+    # elif message.content.startswith('!close'):
     #    await message.channel.send('Ending raid...', delete_after=DELAY)
     #    res = raidful.closeRaid()
     #    raid_start = False
     #    await message.channel.send(res, delete_after=DELAY)
     #    #Return status to normal
     #    await util.setRaidStatusMessage(client,"")
-    
+
     elif message.content.startswith('!clear'):
-        await message.channel.send('Deleting... Please kindly sit tight', delete_after=DELAY*2)
+        await message.channel.send('Deleting... Please kindly sit tight', delete_after=DELAY)
         res = raidful.deleteRaid(params, message.author.name)
         raid_start = False
         await message.channel.send(res)
 
     elif message.content.startswith('!flush'):
         if util.isAdminMessage(message):
-            await message.channel.send('Deleting... Please kindly sit tight for a while', delete_after=DELAY*3)
+            await message.channel.send('Deleting... Please kindly sit tight for a while', delete_after=DELAY)
             res = raidful.deleteAllRaid()
             raid_start = False
             await message.channel.send(res)
         else:
-            await message.channel.send('This command can only be invoked by administrator.\nPlease call Kirbio or Sunny for help.')
+            await message.channel.send('This command can only be invoked by administrator.\nPlease call @Kirbio or @Sunny for help.')
 
     # Get latest raid result
     elif message.content.startswith('!result') or message.content.startswith('!close') or message.content.startswith('!end'):
@@ -176,10 +184,32 @@ async def on_message(message):
         msg = util.formatResultMessage(caughtlist, brokelist)
         await message.channel.send(msg)
 
-        #Return status to normal
-        await util.setRaidStatusMessage(client,"")
+        # Return status to normal
+        await util.setRaidStatusMessage(client, "")
 
-    #test setting status message
+    elif message.content.startswith('!logout'):
+        if not util.isAdminMessage(message):
+            await message.channel.send('This command can only be invoked by administrator.\nPlease call @Kirbio or @Sunny for help.')
+        else:
+            if not message.content.startswith('!logout force'):
+                print(raidful.closeRaid())
+                raidful.updateRemote()
+            await client.logout()
+
+    # sync remote google docs
+    elif message.content.startswith('!sync'):
+        await message.channel.send('Syncing... (It could take up to a minute)', delete_after=DELAY)
+        raidful.updateRemote()
+        await message.channel.send('Sync completed', delete_after=DELAY)
+
+    # Simple test command to check if the bot is not dead
+    elif message.content.startswith('!ping'):
+        await message.channel.send('pong')
+
+    elif message.content.startswith('!local'):
+        raidful.logLocalRaids()
+
+    # test setting status message
     elif message.content.startswith('!test'):
         if util.isAdminMessage(message):
             print('This admin message')

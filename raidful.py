@@ -11,7 +11,7 @@ PARAMS = {}
 # sending get request and saving the response as response object
 
 # local cache for faster access
-local_raids = []
+LOCAL_RAIDS = []
 
 
 # DEPRECATED
@@ -22,26 +22,26 @@ def getData():
 
 
 def getRaids(remote=False):
-    global local_raids
+    global LOCAL_RAIDS
 
-    if remote or not local_raids:           # if fetch from remote or local cache is empty
+    if remote:           # if fetch from remote
         r = requests.get(url=const.SHEET_URL, params=PARAMS)
         # print('remote :', r.json()['items'])
         return r.json()['items']
     else:
-        # print('local :', local_raids)       # fetch from local
-        return local_raids
+        # print('local :', LOCAL_RAIDS)       # fetch from local
+        return LOCAL_RAIDS
 
 
 def updateLocal():
-    global local_raids
+    global LOCAL_RAIDS
     r = requests.get(url=const.SHEET_URL, params=PARAMS)
-    local_raids = r.json()['items']
+    LOCAL_RAIDS = r.json()['items']
     print('Local Cache updated!')
 
 
 def updateRemote():
-    global local_raids
+    global LOCAL_RAIDS
 
     # Delete remote data and replace by local one
     remote_raids = getRaids(remote=True)
@@ -52,7 +52,7 @@ def updateRemote():
         r = requests.post(url=put_url)
 
     print('Copying to remote...')
-    for raid in tqdm(local_raids):
+    for raid in tqdm(LOCAL_RAIDS):
         put_url = '{}/{}&method=PUT'.format(const.SHEET_URL, raid['#'])
         r = requests.post(url=put_url, json=raid)
 
@@ -61,23 +61,23 @@ def updateRemote():
 
 
 def logLocalRaids():
-    global local_raids
+    global LOCAL_RAIDS
     print('Local Raid:')
-    for raid in local_raids:
+    for raid in LOCAL_RAIDS:
         print(raid)
 
 
 def getRaidbyID(id):
-    # global local_raids
-    # if remote or not local_raids:
+    # global LOCAL_RAIDS
+    # if remote or not LOCAL_RAIDS:
     #     r = requests.get(url=const.SHEET_URL + '/' + id.upper())
     #     data = r.json()
     #     print(data)
     # else:
     # https://stackoverflow.com/a/8653568
     raids = getRaids()
-    raid = next((raid for raid in raids if raid['#'].upper() == id.upper()), {
-                'error': 'Record not found'})
+    raid = next(
+        (raid for raid in raids if raid['#'].upper() == id.upper()), None)
     return raid
 
 
@@ -108,7 +108,7 @@ def listRaids(params):
     else:
         raids = getRaids()                  # list all raids
 
-    for raid in local_raids:
+    for raid in raids:
         print(raid)
 
     return util.embedRaidList(raids) if len(raids) > 0 else None
@@ -119,7 +119,7 @@ def listRaids(params):
 
 
 def postRaid(params, owner):
-    global local_raids
+    global LOCAL_RAIDS
     owner = owner.lower()
     if len(params) == 0:
         return 'Please provide Pokemon name (If Gigantamax please include G or GMax)'
@@ -146,7 +146,7 @@ def postRaid(params, owner):
         'code': '-'
     }
 
-    local_raids.append(raid)
+    LOCAL_RAIDS.append(raid)
     return util.formatPokemon(raid) + '\nID: ' + raid['#']
 
     # return 'Cannot post the raid'
@@ -205,7 +205,7 @@ def openRaid(params, raid_start, owner):
                     raid_id = params[0]
 
     raid = getRaidbyID(raid_id)
-    if 'error' in raid.keys():
+    if not raid:
         return {'status': 'error', 'msg': 'ID not found. Please type `!list` for all available raids'}
     if raid['owner'] != owner:
         return {'status': 'error', 'msg': 'This raid belongs to another trainer!'}
@@ -239,10 +239,10 @@ def closeRaid():
 
 
 def deleteRaidbyID(id):
-    global local_raids
+    global LOCAL_RAIDS
 
     raid = getRaidbyID(id)
-    local_raids.remove(raid)
+    LOCAL_RAIDS.remove(raid)
 
 
 def deleteRaid(params, owner):
@@ -266,6 +266,6 @@ def deleteRaid(params, owner):
 
 
 def deleteAllRaid():
-    global local_raids
-    local_raids.clear()
+    global LOCAL_RAIDS
+    LOCAL_RAIDS.clear()
     return 'All raids deleted!'

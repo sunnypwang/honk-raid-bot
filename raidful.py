@@ -2,7 +2,7 @@
 import requests
 import const
 import util
-from tqdm import tqdm
+# from tqdm import tqdm
 # api-endpoint
 
 # defining a params dict for the parameters to be sent to the API
@@ -47,12 +47,12 @@ def updateRemote():
     remote_raids = getRaids(remote=True)
 
     print('Removing remote...')
-    for raid in tqdm(remote_raids):
+    for raid in remote_raids:
         put_url = '{}/{}&method=DELETE'.format(const.SHEET_URL, raid['#'])
         r = requests.post(url=put_url)
 
     print('Copying to remote...')
-    for raid in tqdm(LOCAL_RAIDS):
+    for raid in LOCAL_RAIDS:
         put_url = '{}/{}&method=PUT'.format(const.SHEET_URL, raid['#'])
         r = requests.post(url=put_url, json=raid)
 
